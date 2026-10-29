@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+meta.json
+card_read_aloud/user_files/*
+!card_read_aloud/user_files/README.txt
+.DS_Store

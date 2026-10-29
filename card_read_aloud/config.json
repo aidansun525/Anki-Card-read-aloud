@@ -1,0 +1,31 @@
+{
+    "auto_read_front": true,
+    "auto_read_back": true,
+    "cloze_back": "answers",
+    "read_extra": false,
+    "blank_word": "blank",
+    "engine": "system",
+    "natural_voice": "af_heart",
+    "natural_speed": 0.95,
+    "natural_volume": 0.9,
+    "voice": "",
+    "voice_lang": "en_US",
+    "speed": 1.0,
+    "wait_for_card_audio": true,
+    "skip_cards_with_tts": true,
+    "say_symbols": true,
+    "medical_terms": true,
+    "max_chars": 1500,
+    "shortcut": "t",
+    "replacements": {
+        "w/o": "without",
+        "w/": "with",
+        "b/c": "because",
+        "2/2": "secondary to",
+        "Dx": "diagnosis",
+        "Tx": "treatment",
+        "Sx": "symptoms",
+        "Hx": "history",
+        "Abx": "antibiotics"
+    }
+}
