@@ -8,6 +8,14 @@ when it's written the usual way (case matters: "IV" yes, "iv" no).
 
 import re
 
+# Letters of one abbreviation are joined with a no-break space, so the natural
+# voice can tell "I G M" from two abbreviations side by side ("IgM IgG").
+NB = "\u00a0"
+
+
+def _nb(text):
+    return re.sub(r"(?<![\w])([A-Z]) (?=[A-Z](?![\w]))", r"\1" + NB, text)
+
 # Said as letters, the way they're said on the wards. Written with spaces so
 # neither voice reads them as a word ("IV" as Roman four, "DIC" as a word).
 LETTERS = """
@@ -25,7 +33,7 @@ CPT ACC FAS ALT AST ALP GGT LDH CK BUN PKU MSUD OTC CPS NSAID NSAIDs SSRI
 SSRIs SNRI SNRIs MAOI ARB ARBs CCB PPI PPIs DOAC LMWH UFH
 G6PD PPAR GLUT SGLT DPP GLP GIP
 CPS OTC NAGS ASL BCKDH BCAA BH HSL ATGL MTP LCFA MCFA VLCFA SCFA PUFA EPA DHA
-PEP ALA PBG ADA PNP HGPRT HGPRTase APRT UMP OMP IMP XMP CBS MMA ACAT ABCA SREBP NPC MCAD SCAD LCAD VLCAD LCHAD BCKD BCAT GDH PAH HGD FAH IVC IVF SVC PCSK dUMP dTMP dNTP dNTPs PK MAO COMT PG PGE PGI PGF LTB LTC LTD MTHFR
+PEP ALA PBG ADA PNP HGPRT HGPRTase APRT UMP OMP IMP XMP CBS MMA ACAT ABCA SREBP NPC MCAD SCAD LCAD VLCAD LCHAD BCKD BCAT GDH PAH HGD FAH IVC IVF SVC PCSK dUMP dTMP dNTP dNTPs CEA ADCC ADCP ADC EGFR HER VEGF PDGF FGF AFP PSA LDH CA ssDNA dsDNA cDNA mtDNA ctDNA ssRNA dsRNA siRNA miRNA snRNA lncRNA PK MAO COMT PG PGE PGI PGF LTB LTC LTD MTHFR
 """
 
 EXPANSIONS = {
@@ -157,6 +165,13 @@ EXPANSIONS = {
     "H2O": "water",
     "H2O2": "hydrogen peroxide",
     "O2-": "superoxide",
+    "CAR-T": "car T",
+    "CAR T": "car T",
+    "Treg": "T reg",
+    "Tregs": "T regs",
+    "Ig": "I G",
+    "OBGYN": "O B G Y N",
+    "OB/GYN": "O B G Y N",
     "NaCl": "sodium chloride",
     "KCl": "potassium chloride",
     "HCl": "hydrochloric acid",
@@ -235,7 +250,7 @@ def _word_re(key):
 
 
 _EXPANSIONS = sorted(EXPANSIONS.items(), key=lambda kv: -len(kv[0]))
-_EXPANSION_RES = [(_word_re(k), v) for k, v in _EXPANSIONS]
+_EXPANSION_RES = [(_word_re(k), _nb(v)) for k, v in _EXPANSIONS]
 _LETTERS = sorted(set(LETTERS.split()), key=len, reverse=True)
 
 
@@ -244,7 +259,51 @@ def _spell(abbr):
     plural = abbr.endswith("s") and abbr[:-1].isupper() and len(abbr) > 2
     core = abbr[:-1] if plural else abbr
     out = " ".join(re.findall(r"\d+|.", core))
-    return out + ("s" if plural else "")
+    return _nb(out) + ("s" if plural else "")
+
+
+# Capitalized abbreviations not listed above are spelled out too ("SIADH",
+# "ECF", "AUB"), except ones that are said as words and ordinary words written
+# in capitals for emphasis ("NOT", "ALL").
+SAID_AS_WORDS = set("""
+AIDS GABA STEMI NSTEMI SOAP SOAPs RAAS ANCA ELISA HAART SARS COVID PEEP SNARE
+MALT FAST FISH MASH NASH TIPS SABA LABA LAMA SCID PROM PPROM NAAT AMBOSS DEXA
+LASIK MODY MERS HELLP CREST TORCH VACTERL WAGR PANDAS POEMS HACEK SPIKES NOTCH
+GOLD BRAT CHADS PERC WELLS CURB SIRS SOFA DASH NICE AMBU CPAP BIPAP SPECT PET
+TENS ACE UNICEF NASA LASER RADAR SCUBA ACTH NADPH CABG HEENT SIDS ARDS CREST
+SMART TRAP REDS RICE MONA SALT PAINT MUDPILES CHAMPS SAD SAMPLE OPQRST
+""".split())
+TWO_LETTER_WORDS = set("AM AN AS AT BE BY DO GO HE IF IN IS IT ME MY NO OF OH ON OR SO TO UP US WE OK".split())
+ROMAN_NUMBERS = {"II": 2, "III": 3, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "XI": 11, "XII": 12, "XIII": 13}
+_CAPS_RE = re.compile(r"(?<![\w])([A-Z]{2,7})(s?)(\d*)(?![\w])")
+_common = None
+
+
+def _common_words():
+    global _common
+    if _common is None:
+        import os
+
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "natural_voice", "words_common.txt")
+        try:
+            with open(path, encoding="utf-8") as f:
+                _common = {line.strip() for line in f if line.strip()}
+        except OSError:
+            _common = set()
+    return _common
+
+
+def _caps(m):
+    word, plural, digits = m.groups()
+    if word in ROMAN_NUMBERS and not plural and not digits:
+        # a Roman numeral on its own is a number, never "Roman two"
+        return str(ROMAN_NUMBERS[word])
+    if word in SAID_AS_WORDS or (word + plural) in SAID_AS_WORDS:
+        return m.group(0)
+    if not digits:
+        if word in TWO_LETTER_WORDS or (word + plural).lower() in _common_words() or word.lower() in _common_words():
+            return m.group(0)
+    return NB.join(word) + plural + (" " + digits if digits else "")
 
 
 _LETTER_RE = re.compile(r"(?<![\w])((?:" + "|".join(re.escape(a) for a in _LETTERS) + r")\d*)(?![\w])")
@@ -282,15 +341,16 @@ def apply(text):
     text = _UNIT_RE.sub(lambda m: f"{m.group(1)} {UNITS[m.group(2)]}", text)
 
     # charges, CD markers and ratios
-    text = re.sub(r"(?<![\w])CD(\d+)\+", r"C D \1 positive", text)
-    text = re.sub(r"(?<![\w])CD(\d+)(?![\w])", r"C D \1", text)
+    text = re.sub(r"(?<![\w])CD(\d+)\+", "C" + NB + r"D \1 positive", text)
+    text = re.sub(r"(?<![\w])CD(\d+)(?![\w])", "C" + NB + r"D \1", text)
     text = re.sub(r"(?<![\w])IL-?(\d+)", r"interleukin \1", text)
-    text = re.sub(r"(?<![\w])TNF-?(?=[αβa])", "T N F ", text)
-    text = re.sub(r"(?<![\w])TNF(?![\w])", "T N F", text)
+    text = re.sub(r"(?<![\w])TNF-?(?=[αβa])", _nb("T N F "), text)
+    text = re.sub(r"(?<![\w])TNF(?![\w])", _nb("T N F"), text)
     text = re.sub(r"(?<![\w])IFN-?", "interferon ", text)
-    text = re.sub(r"(?<![\w])TGF-?", "T G F ", text)
-    text = re.sub(r"(?<![\w])Ig([AGMDE])(?![\w])", r"I g \1", text)
-    text = re.sub(r"(?<![\w])HLA-?([A-Z]+)(\d*)", lambda m: "H L A " + " ".join(m.group(1)) + (" " + m.group(2) if m.group(2) else ""), text)
+    text = re.sub(r"(?<![\w])TGF-?", _nb("T G F "), text)
+    text = re.sub(r"(?<![\w])Ig([AGMDE])(?![\w])", "I" + NB + "G" + NB + r"\1", text)
+    text = re.sub(r"/mL(?![\w])", " per M L", text)
+    text = re.sub(r"(?<![\w])HLA-?([A-Z]+)(\d*)", lambda m: _nb("H L A " + " ".join(m.group(1))) + (" " + m.group(2) if m.group(2) else ""), text)
     text = re.sub(r"(?<![\w])apo\s?([A-E])-?(\d*)", lambda m: f"apo {m.group(1)}" + (f" {m.group(2)}" if m.group(2) else ""), text, flags=re.I)
     text = re.sub(r"(?<![\w])(\d+),\s?(XX|XY|XXY|XO|XXX|XYY)(?![\w])", lambda m: f"{m.group(1)} {' '.join(m.group(2))}", text)
     text = re.sub(r"(?<![\w])t\((\d+|[XY]);(\d+|[XY])\)", r"translocation \1 \2", text)
@@ -320,6 +380,7 @@ def apply(text):
     for rx, val in _EXPANSION_RES:
         text = rx.sub(val, text)
     text = _LETTER_RE.sub(lambda m: _spell(m.group(1)), text)
+    text = _CAPS_RE.sub(_caps, text)
 
     # glucose 6-phosphate, fructose 1,6-bisphosphate, 2,3-BPG
     text = re.sub(r"(?<![\w])(\d),(\d)-", r"\1 \2 ", text)

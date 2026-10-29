@@ -26,7 +26,9 @@ The natural voice is **[Kokoro](https://huggingface.co/hexgrad/Kokoro-82M)**, a 
 - **Roman numerals that are numbers stay numbers.** *Type IV*, *factor VIII* and *CN VII* are read as 4, 8 and 7
 - **Ions and labs:** Na⁺, K⁺ and HCO₃⁻ become sodium, potassium and bicarbonate; *mEq/L*, *mmHg* and *cells/mm³* are read in full
 - **Biochemistry:** acetyl-CoA, HMG-CoA, NADPH, G6PD, F-1,6-BP, G3P, 2,3-BPG, α-KG, CoQ10, CD4⁺, IL-6, TNF-α and β-lactam all come out right
-- **800+ exact pronunciations** (natural voice) for drug, bug and biochemistry names the voice would otherwise mispronounce: antibiotics, antivirals, cardiac and psych drugs, -mabs, the urea cycle, amino acids, lipid metabolism and the lysosomal storage diseases
+- **1,400+ exact pronunciations** (natural voice) for drug, bug, anatomy and biochemistry names the voice would otherwise mispronounce, checked against a full AnKing deck: antibiotics, antivirals, cardiac and psych drugs, -mabs, virus families, the urea cycle, amino acids, lipid metabolism and the lysosomal storage diseases
+- **Joined words are read in their parts:** *neoantigen* is "neo antigen", *oncofetal* is "onco fetal", *autoantibody* is "auto antibody", *thromboembolism* is "thrombo embolism"
+- **Abbreviations are spelled out with natural stress:** IgM, CEA, ADCC, EGFR, SIADH and DNA as letters; CAR T as "car T", Treg as "T reg"
 - Add your own words in Settings
 
 ---
@@ -53,6 +55,15 @@ Open **Tools → Card Read Aloud → Settings**, or the **Config** button in the
 - Tested on **Anki 26.9** on macOS (Apple Silicon). Windows and Linux should work too; please report any problems on the support page
 - The natural voice downloads its pieces from PyPI (uv, kokoro-onnx, onnxruntime) and from the kokoro-onnx release on GitHub, with Hugging Face as a backup
 - Works alongside theme and answer-sound add-ons
+
+---
+
+## 📝 What's new in 1.7
+
+- Joined words are read in their parts: neo antigen, onco fetal, auto antibody, thrombo embolism
+- IgM, IgG, DNA, CEA and other abbreviations are spelled out with natural stress
+- Roman numerals on their own are numbers, never "Roman two"
+- About 640 new exact pronunciations, checked against a full AnKing deck
 
 ---
 

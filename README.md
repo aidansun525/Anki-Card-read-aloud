@@ -26,7 +26,9 @@ The natural voice is **[Kokoro](https://huggingface.co/hexgrad/Kokoro-82M)**, a 
 - **Roman numerals that are numbers stay numbers.** *Type IV*, *factor VIII* and *CN VII* are read as 4, 8 and 7
 - **Ions and labs:** Na⁺, K⁺ and HCO₃⁻ become sodium, potassium and bicarbonate; *mEq/L*, *mmHg* and *cells/mm³* are read in full
 - **Biochemistry:** acetyl-CoA, HMG-CoA, NADPH, G6PD, F-1,6-BP, G3P, 2,3-BPG, α-KG, CoQ10, CD4⁺, IL-6, TNF-α and β-lactam all come out right
-- **800+ exact pronunciations** (natural voice) for drug, bug and biochemistry names the voice would otherwise mispronounce: antibiotics, antivirals, cardiac and psych drugs, -mabs, the urea cycle, amino acids, lipid metabolism and the lysosomal storage diseases
+- **1,400+ exact pronunciations** (natural voice) for drug, bug, anatomy and biochemistry names the voice would otherwise mispronounce, checked against a full AnKing deck: antibiotics, antivirals, cardiac and psych drugs, -mabs, virus families, the urea cycle, amino acids, lipid metabolism and the lysosomal storage diseases
+- **Joined words are read in their parts:** *neoantigen* is "neo antigen", *oncofetal* is "onco fetal", *autoantibody* is "auto antibody", *thromboembolism* is "thrombo embolism"
+- **Abbreviations are spelled out with natural stress:** IgM, CEA, ADCC, EGFR, SIADH and DNA as letters; CAR T as "car T", Treg as "T reg"
 - Add your own words in Settings
 
 ---
@@ -56,6 +58,15 @@ Open **Tools → Card Read Aloud → Settings**, or the **Config** button in the
 
 ---
 
+## 📝 What's new in 1.7
+
+- Joined words are read in their parts: neo antigen, onco fetal, auto antibody, thrombo embolism
+- IgM, IgG, DNA, CEA and other abbreviations are spelled out with natural stress
+- Roman numerals on their own are numbers, never "Roman two"
+- About 640 new exact pronunciations, checked against a full AnKing deck
+
+---
+
 <sub>Voice: [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) by hexgrad (Apache 2.0), run with [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx). Add-on built with [Claude](https://claude.ai) by Anthropic.</sub>
 
 ---
@@ -64,6 +75,10 @@ Open **Tools → Card Read Aloud → Settings**, or the **Config** button in the
 
 - **From AnkiWeb:** Tools → Add-ons → Get Add-ons, then paste the add-on's code.
 - **From this repo:** download `card_read_aloud.ankiaddon` from the Releases page and double-click it, or copy the `card_read_aloud` folder into Anki's `addons21` folder.
+
+## Changes
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Report a problem
 

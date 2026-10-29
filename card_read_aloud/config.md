@@ -12,7 +12,7 @@ Use **Tools > Card Read Aloud > Settings** for a friendlier window. Raw options:
 - `wait_for_card_audio`: let the card's own sounds finish first instead of cutting them off.
 - `skip_cards_with_tts`: don't auto-read cards whose template already uses Anki's `{{tts}}`.
 - `say_symbols`: say arrows and symbols (→ ↑ ↓ ≥ ±) as words.
-- `medical_terms`: read medical shorthand the way it's said on the wards (IV as "I V", q8h as "every 8 hours", Na+ as "sodium", acetyl-CoA as "acetyl co A"). The natural voice also uses an exact pronunciation list for about 800 drug, bug and biochemistry names (natural_voice/lexicon.json).
+- `medical_terms`: read medical shorthand the way it's said on the wards (IV as "I V", q8h as "every 8 hours", Na+ as "sodium", acetyl-CoA as "acetyl co A"). The natural voice also uses an exact pronunciation list for about 1,400 drug, bug, anatomy and biochemistry names (natural_voice/lexicon.json), and reads joined words in their parts ("neo antigen", "onco fetal").
 - `max_chars`: stop after this many characters.
 - `shortcut`: key that reads the current side again, or stops reading.
 - `replacements`: abbreviations to say as words.

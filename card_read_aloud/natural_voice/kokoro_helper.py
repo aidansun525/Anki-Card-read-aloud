@@ -43,7 +43,7 @@ def split_sentences(text):
     return out
 
 
-WORD_RE = re.compile(r"([A-Za-z][A-Za-z']*)")
+WORD_RE = re.compile(r"([^\W\d_][^\W\d_']*(?:'[^\W\d_]+)*)")
 LEXICON = {}
 
 
@@ -74,8 +74,157 @@ def lookup(word):
     if w.endswith("es") and w[:-1] in LEXICON and w[:-1].endswith(("se", "ce", "ze")):
         return LEXICON[w[:-1]] + "ᵻz"
     if w.endswith("s") and w[:-1] in LEXICON:
-        return LEXICON[w[:-1]] + "z"
+        base = LEXICON[w[:-1]]
+        return base + ("s" if base[-1:] in "ptkfθ" else "z")
     return None
+
+
+# Letter names for spelled abbreviations ("D N A", "C E A"). eSpeak reads a
+# lone "A" in the middle of a sentence as the word "a", so we say them here.
+LETTER_IPA = {
+    "A": "eɪ", "B": "biː", "C": "siː", "D": "diː", "E": "iː", "F": "ɛf",
+    "G": "dʒiː", "H": "eɪtʃ", "I": "aɪ", "J": "dʒeɪ", "K": "keɪ", "L": "ɛl",
+    "M": "ɛm", "N": "ɛn", "O": "oʊ", "P": "piː", "Q": "kjuː", "R": "ɑːɹ",
+    "S": "ɛs", "T": "tiː", "U": "juː", "V": "viː", "W": "dʌbəljuː", "X": "ɛks",
+    "Y": "waɪ", "Z": "ziː",
+}
+# runs of two or more capital letters ("D N A"), or a capital A after a word
+# ("vitamin A", "group A strep"); a sentence-initial "A" stays the article
+LETTERS_RE = re.compile(r"(?<![\w'])[A-Z](?:\u00a0[A-Z])+s?(?![\w'])|(?<=[\w,)] )A(?![\w'])")
+
+
+def _stress(ipa, mark):
+    m = re.search(r"[aeiouæɑɐɔəɚɛɜɪʊʌᵻ]", ipa)
+    return ipa[:m.start()] + mark + ipa[m.start():] if m else mark + ipa
+
+
+def spell(letters):
+    # "U\u00a0T\u00a0Is" (UTIs) ends with a plural s
+    plural = letters.endswith("s")
+    names = [LETTER_IPA[c] for c in letters.rstrip("s").split("\u00a0")]
+    out = " ".join([_stress(n, "ˌ") for n in names[:-1]] + [_stress(names[-1], "ˈ")])
+    return out + ("z" if plural else "")
+
+
+# Combining forms. Joined words like "neoantigen" or "oncofetal" are read in
+# their parts ("neo antigen"), which is how they're said. Without this eSpeak
+# guesses from the spelling and runs the parts together ("nee-oh-AN-tie-gen").
+PREFIXES = {
+    "neo": "nˌiːoʊ", "onco": "ˌɑːŋkoʊ", "auto": "ˌɔːɾoʊ", "allo": "ˌæloʊ",
+    "iso": "ˌaɪsoʊ", "pro": "pɹˌoʊ", "pre": "pɹˌiː", "post": "pˌoʊst",
+    "re": "ɹˌiː", "co": "kˌoʊ", "anti": "ˌænti", "pseudo": "sˌuːdoʊ",
+    "hyper": "hˌaɪpɚ", "hypo": "hˌaɪpoʊ", "intra": "ˌɪntɹə", "inter": "ˌɪntɚ",
+    "micro": "mˌaɪkɹoʊ", "macro": "mˌækɹoʊ", "endo": "ˌɛndoʊ", "exo": "ˌɛksoʊ",
+    "epi": "ˌɛpɪ", "peri": "pˌɛɹi", "para": "pˌæɹə", "super": "sˌuːpɚ",
+    "sub": "sˌʌb", "non": "nˌɑːn", "poly": "pˌɑːli", "oligo": "ˌɑːlɪɡoʊ",
+    "pan": "pˌæn", "thrombo": "θɹˌɑːmboʊ", "immuno": "ˌɪmjʊnoʊ",
+    "cardio": "kˌɑːɹdioʊ", "hepato": "hˌɛpətoʊ", "spleno": "splˌiːnoʊ",
+    "glomerulo": "ɡloʊmˌɛɹjʊloʊ", "nephro": "nˌɛfɹoʊ", "neuro": "nˌʊɹoʊ",
+    "gastro": "ɡˌæstɹoʊ", "entero": "ˌɛntəɹoʊ", "osteo": "ˌɑːstioʊ",
+    "myo": "mˌaɪoʊ", "hemo": "hˌiːmoʊ", "angio": "ˌændʒioʊ", "vaso": "vˌeɪzoʊ",
+    "broncho": "bɹˌɑːŋkoʊ", "pneumo": "nˌuːmoʊ", "chemo": "kˌiːmoʊ",
+    "radio": "ɹˌeɪdioʊ", "lympho": "lˌɪmfoʊ", "leuko": "lˌuːkoʊ",
+    "erythro": "ɪɹˌɪθɹoʊ", "cyto": "sˌaɪɾoʊ", "histo": "hˌɪstoʊ",
+    "patho": "pˌæθoʊ", "physio": "fˌɪzioʊ", "uro": "jˌʊɹoʊ", "dys": "dˌɪs",
+    "mono": "mˌɑːnoʊ", "multi": "mˌʌlti", "semi": "sˌɛmi", "ultra": "ˌʌltɹə",
+    "trans": "tɹˌænz", "retro": "ɹˌɛtɹoʊ", "extra": "ˌɛkstɹə", "infra": "ˌɪnfɹə",
+    "supra": "sˌuːpɹə", "meta": "mˌɛɾə", "bio": "bˌaɪoʊ", "glyco": "ɡlˌaɪkoʊ",
+    "lipo": "lˌɪpoʊ", "phospho": "fˌɑːsfoʊ", "pharmaco": "fˌɑːɹməkoʊ",
+    "tachy": "tˌæki", "brady": "bɹˌædi", "hetero": "hˌɛɾəɹoʊ", "homo": "hˌoʊmoʊ",
+    "xeno": "zˌɛnoʊ", "ortho": "ˌɔːɹθoʊ", "photo": "fˌoʊɾoʊ",
+    "chondro": "kˌɑːndɹoʊ", "fibro": "fˌaɪbɹoʊ", "adeno": "ˌædənoʊ",
+    "carcino": "kˌɑːɹsɪnoʊ", "hemi": "hˌɛmi", "dermato": "dˌɜːmətoʊ",
+    "derm": "dˌɜːm", "cholangio": "koʊlˌændʒioʊ", "chole": "kˌoʊli",
+    "pancreatico": "pˌæŋkɹiˌæɾɪkoʊ", "duodeno": "dˌuːədˌiːnoʊ",
+    "thyro": "θˌaɪɹoʊ", "adreno": "ədɹˌiːnoʊ", "cortico": "kˌɔːɹɾɪkoʊ",
+    "gluco": "ɡlˌuːkoʊ", "keto": "kˌiːɾoʊ", "mega": "mˌɛɡə", "pyelo": "pˌaɪəloʊ",
+    "salpingo": "sælpˌɪŋɡoʊ", "oophoro": "oʊˌɑːfəɹoʊ", "hystero": "hˌɪstəɹoʊ",
+    "encephalo": "ɛnsˌɛfəloʊ", "meningo": "mənˌɪŋɡoʊ", "myelo": "mˌaɪəloʊ",
+    "arterio": "ɑːɹtˌɪɹioʊ", "athero": "ˌæθəɹoʊ", "veno": "vˌiːnoʊ",
+    "lymphangio": "lɪmfˌændʒioʊ", "rhabdo": "ɹˌæbdoʊ", "leiomyo": "lˌaɪoʊmˌaɪoʊ",
+    "hemato": "hˌiːmətoʊ", "sero": "sˌɪɹoʊ", "toxo": "tˌɑːksoʊ",
+}
+_PREFIX_ORDER = sorted(PREFIXES, key=len, reverse=True)
+# endings that aren't words on their own but finish a joined word
+# ("spleno" + "megaly", "angio" + "pathic")
+ENDINGS = {
+    "megaly": "mˈɛɡəli", "pathic": "pˈæθɪk", "genic": "dʒˈɛnɪk",
+    "genesis": "dʒˈɛnəsɪs", "viridae": "vˈɪɹɪdiː",
+}
+VOWELS = "aeiouy"
+COMMON = set()  # everyday words: never split ("present" is not pre + sent)
+KNOWN = set()  # real words a part may be ("antigen", "fetal", "embolism")
+_compound_cache = {}
+
+
+def load_words():
+    here = os.path.dirname(os.path.abspath(__file__))
+    for name, target in (("words_common.txt", COMMON), ("words_known.txt", KNOWN)):
+        try:
+            with open(os.path.join(here, name), encoding="utf-8") as f:
+                target.update(line.strip() for line in f if line.strip())
+        except OSError:
+            pass
+
+
+def _is_part(word):
+    return word in COMMON or word in KNOWN or word in ENDINGS or lookup(word) is not None
+
+
+def _inflected_common(w):
+    # "antigens" is "antigen" + s, not "anti" + "gens"
+    for end, add in (("s", ""), ("es", ""), ("ed", ""), ("ed", "e"), ("ing", ""), ("ing", "e"), ("ly", ""), ("al", "")):
+        if w.endswith(end) and (w[: -len(end)] + add) in COMMON:
+            return True
+    return False
+
+
+def split_compound(word, depth=0):
+    """'neoantigen' -> ['neo', 'antigen']; None if it isn't a joined word."""
+    w = word.lower()
+    if depth == 0 and (len(w) < 7 or w in COMMON or w in LEXICON or _inflected_common(w)):
+        return None
+    for p in _PREFIX_ORDER:
+        rest = w[len(p):]
+        if not w.startswith(p) or len(rest) < 5:
+            continue
+        # short prefixes only split before a vowel ("pre-eclampsia", "re-uptake"),
+        # so "protease" and "prostatic" stay whole
+        if len(p) <= 3 and rest[0] not in VOWELS and depth == 0:
+            continue
+        if _is_part(rest):
+            return [p, rest]
+        if depth < 2:
+            more = split_compound(rest, depth + 1)
+            if more:
+                return [p] + more
+    return None
+
+
+def compound(word, phonemize):
+    """IPA for a joined word, or None. phonemize(text) gives eSpeak's IPA."""
+    w = word.lower()
+    if w in _compound_cache:
+        return _compound_cache[w]
+    parts = split_compound(w)
+    ipa = None
+    if not parts and len(w) > 8 and w.endswith(("iasis", "iases")) and w not in COMMON:
+        # candidiasis, cholelithiasis, schistosomiasis: "-EYE-a-sis"
+        stem = phonemize(w[:-5]).strip().replace("ˈ", "ˌ")
+        if stem:
+            ipa = stem + ("ˈaɪəsɪs" if w.endswith("sis") else "ˈaɪəsiːz")
+    elif not parts and len(w) > 9 and w.endswith("viridae") and w not in COMMON:
+        # virus families: picornaviridae, "-VEER-ih-dee"
+        stem = phonemize(w[:-7]).strip().replace("ˈ", "ˌ")
+        if stem:
+            ipa = stem + "vˈɪɹɪdiː"
+    elif parts:
+        *prefixes, last = parts
+        tail = ENDINGS.get(last) or lookup(last) or phonemize(last).strip()
+        if tail:
+            ipa = "".join(PREFIXES[p] for p in prefixes) + tail
+    _compound_cache[w] = ipa
+    return ipa
 
 
 class Speaker:
@@ -108,20 +257,34 @@ class Speaker:
         plain = []
 
         def flush():
-            chunk = "".join(plain).strip()
+            chunk = "".join(plain).replace("\u00a0", " ").strip()
             plain.clear()
             if chunk:
                 ph = self.kokoro.tokenizer.phonemize(chunk, lang)
                 if ph.strip():
                     pieces.append(ph.strip())
 
-        for token in WORD_RE.split(text):
-            ipa = lookup(token)
-            if ipa:
-                flush()
-                pieces.append(ipa)
-            else:
-                plain.append(token)
+        def espeak(word):
+            return self.kokoro.tokenizer.phonemize(word, lang)
+
+        def words(segment):
+            for token in WORD_RE.split(segment):
+                ipa = lookup(token)
+                if not ipa and token[:1].isalpha():
+                    ipa = compound(token, espeak)
+                if ipa:
+                    flush()
+                    pieces.append(ipa)
+                else:
+                    plain.append(token)
+
+        pos = 0
+        for m in LETTERS_RE.finditer(text):
+            words(text[pos:m.start()])
+            flush()
+            pieces.append(spell(m.group(0)))
+            pos = m.end()
+        words(text[pos:])
         flush()
         out = " ".join(pieces)
         return re.sub(r"\s+([,.;:!?])", r"\1", out)
@@ -305,6 +468,7 @@ def main():
         emit(event="fatal", message=traceback.format_exc())
         return 1
     load_lexicon()
+    load_words()
     speaker = Speaker(kokoro, player)
     emit(event="ready", voices=sorted(kokoro.get_voices()))
     for line in sys.stdin:

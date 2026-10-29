@@ -129,7 +129,8 @@ def make_tag(text, cfg):
     voice = (cfg.get("voice") or "").strip()
     lang = (cfg.get("voice_lang") or "en_US").strip() or "en_US"
     return TTSTag(
-        field_text=text,
+        # no-break spaces only matter to the natural voice
+        field_text=text.replace("\u00a0", " "),
         lang=lang,
         voices=[voice] if voice else [],
         speed=speed,
