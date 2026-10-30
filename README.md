@@ -12,7 +12,9 @@ The natural voice is **[Kokoro](https://huggingface.co/hexgrad/Kokoro-82M)**, a 
 - ⚡ **Speaks live, with no pre-rendering.** There's no waiting to generate audio and no sound files added to your collection, so syncing stays fast
 - 🎚️ Adjustable speed and volume
 
-> ⚠️ **Heads-up: one-time ~500 MB download.** The natural voice isn't bundled. When you turn it on (**Tools → Card Read Aloud → Settings → Download**), the add-on downloads the voice model and a small private Python engine, about 500 MB. This happens once. It lives inside the add-on's own folder, never touches Anki's Python, and the **Remove** button deletes all of it.
+> ⚠️ **Heads-up: one-time ~500 MB download is REQUIRED FOR NATURAL VOICE.** The natural voice isn't bundled. When you turn it on (**Tools → Card Read Aloud → Settings → Download**), the add-on downloads the voice model and a small private Python engine, about 500 MB. This happens once. It lives inside the add-on's own folder, never touches Anki's Python, and the **Remove** button deletes all of it.
+> 
+> ![Warning](images/warning.png)
 >
 > Don't want the download? Choose **Built-in voice** to use your computer's own voices instead.
 
