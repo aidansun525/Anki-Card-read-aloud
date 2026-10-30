@@ -77,6 +77,37 @@ def is_installed():
     )
 
 
+def _use_data_dir(path):
+    global DATA_DIR, ENV_DIR, MODEL_DIR, LOG_PATH, MARKER
+    DATA_DIR = path
+    ENV_DIR = os.path.join(DATA_DIR, "env")
+    MODEL_DIR = os.path.join(DATA_DIR, "model")
+    LOG_PATH = os.path.join(DATA_DIR, "log.txt")
+    MARKER = os.path.join(DATA_DIR, "installed.json")
+
+
+def _borrow_voice():
+    """If this copy of the add-on has no voice yet but another copy does (one
+    from AnkiWeb and one installed from a file), use that one instead of
+    downloading 500 MB again. Nothing is moved, so both copies keep working."""
+    if is_installed():
+        return
+    own = DATA_DIR
+    parent = os.path.dirname(ADDON_DIR)
+    try:
+        siblings = sorted(os.listdir(parent))
+    except OSError:
+        return
+    for name in siblings:
+        other = os.path.join(parent, name)
+        if other == ADDON_DIR or not os.path.exists(os.path.join(other, "natural_voice", "kokoro_helper.py")):
+            continue
+        _use_data_dir(os.path.join(other, "user_files", "natural_voice"))
+        if is_installed():
+            return
+    _use_data_dir(own)
+
+
 def _clean_env():
     env = dict(os.environ)
     for key in ("PYTHONHOME", "PYTHONPATH", "VIRTUAL_ENV", "PYTHONSTARTUP", "UV_PROJECT_ENVIRONMENT"):
@@ -239,6 +270,9 @@ installer = Install()
 def remove():
     stop_helper()
     shutil.rmtree(DATA_DIR, ignore_errors=True)
+
+
+_borrow_voice()
 
 
 # ---------------------------------------------------------------- the helper process

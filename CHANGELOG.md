@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8 (2026-10-30)
+
+- **Fixes cards being read two or three times.** This happened when the add-on was installed twice, for example once from AnkiWeb and once from a file: each copy read every card, often one with the built-in voice and one with the natural voice. Now only one copy reads, and it offers to turn the extra copy off (your settings come along).
+- If the copy you keep hasn't downloaded the natural voice but the other copy has, it uses that download instead of fetching 500 MB again.
+
 ## 1.7 (2026-10-29)
 
 Pronunciation update, checked against all 51,794 notes of a real AnKing collection.

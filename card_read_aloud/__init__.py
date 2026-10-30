@@ -353,7 +353,47 @@ def on_state_change(new_state, old_state):
         stop()
 
 
+def _other_copies():
+    """Other enabled copies of this add-on, e.g. one from AnkiWeb and one
+    installed from a file. Each would read every card, so you'd hear it twice."""
+    am = mw.addonManager
+    found = []
+    for module in am.allAddons():
+        if module == MODULE or not am.isEnabled(module):
+            continue
+        if os.path.exists(os.path.join(am.addonsFolder(module), "natural_voice", "kokoro_helper.py")):
+            found.append(module)
+    return found
+
+
+def _offer_to_disable_copies():
+    from aqt.utils import askUser
+
+    others = _other_copies()
+    if not others:
+        return
+    names = ", ".join(f'"{m}"' for m in others)
+    if askUser(
+        "Card Read Aloud is installed more than once, so each card is read more than once.\n\n"
+        f"Turn off the extra copy ({names})? This keeps the one in \"{MODULE}\", "
+        "including your settings and the natural voice. Anki will need a restart.",
+        title="Card Read Aloud",
+    ):
+        am = mw.addonManager
+        # keep your settings: if this copy was never set up, take the other's
+        if (am.getConfig(MODULE) or {}) == (am.addonConfigDefaults(MODULE) or {}):
+            for module in others:
+                theirs = am.getConfig(module)
+                if theirs and theirs != (am.addonConfigDefaults(module) or {}):
+                    save_config({**get_config(), **theirs})
+                    break
+        for module in others:
+            am.toggleEnabled(module, enable=False)
+        tooltip("Card Read Aloud: the extra copy is off. Restart Anki to finish.", period=6000)
+
+
 def on_profile_open():
+    QTimer.singleShot(1500, _offer_to_disable_copies)
     # load the natural voice in the background so the first card isn't slow
     if use_natural(get_config()):
         try:
@@ -419,15 +459,23 @@ def build_menu():
     _sync_menu()
 
 
-build_menu()
-mw.addonManager.setConfigAction(MODULE, open_settings)
-gui_hooks.webview_will_set_content.append(inject)
-gui_hooks.webview_did_receive_js_message.append(on_js_message)
-gui_hooks.reviewer_did_show_question.append(on_show_question)
-gui_hooks.reviewer_did_show_answer.append(on_show_answer)
-gui_hooks.state_shortcuts_will_change.append(on_shortcuts)
-gui_hooks.state_will_change.append(on_state_change)
-gui_hooks.profile_did_open.append(on_profile_open)
-gui_hooks.profile_will_close.append(natural.stop_helper)
-natural.helper.on_failed = _natural_failed
-natural.installer.on_installed = _natural_installed
+def setup():
+    build_menu()
+    mw.addonManager.setConfigAction(MODULE, open_settings)
+    gui_hooks.webview_will_set_content.append(inject)
+    gui_hooks.webview_did_receive_js_message.append(on_js_message)
+    gui_hooks.reviewer_did_show_question.append(on_show_question)
+    gui_hooks.reviewer_did_show_answer.append(on_show_answer)
+    gui_hooks.state_shortcuts_will_change.append(on_shortcuts)
+    gui_hooks.state_will_change.append(on_state_change)
+    gui_hooks.profile_did_open.append(on_profile_open)
+    gui_hooks.profile_will_close.append(natural.stop_helper)
+    natural.helper.on_failed = _natural_failed
+    natural.installer.on_installed = _natural_installed
+
+
+# If another copy of this add-on already loaded, stay quiet: only one copy
+# may read, and that copy offers to turn the others off.
+if getattr(mw, "_card_read_aloud_module", None) is None:
+    mw._card_read_aloud_module = MODULE
+    setup()

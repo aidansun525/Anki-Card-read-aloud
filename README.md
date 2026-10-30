@@ -60,7 +60,11 @@ Open **Tools → Card Read Aloud → Settings**, or the **Config** button in the
 
 ---
 
-## 📝 What's new in 1.7
+## 📝 What's new
+
+**1.8:** fixes cards being read twice when the add-on was installed both from AnkiWeb and from a file.
+
+**1.7:**
 
 - Joined words are read in their parts: neo antigen, onco fetal, auto antibody, thrombo embolism
 - IgM, IgG, DNA, CEA and other abbreviations are spelled out with natural stress
