@@ -382,12 +382,17 @@ class SoundDevicePlayer:
         (also when it has been unplugged)."""
         if not name:
             return None
-        try:
-            for i, dev in enumerate(self.sd.query_devices()):
-                if dev["name"] == name and dev["max_output_channels"] > 0:
-                    return i
-        except Exception:
-            pass
+        for attempt in range(2):
+            try:
+                for i, dev in enumerate(self.sd.query_devices()):
+                    if dev["name"] == name and dev["max_output_channels"] > 0:
+                        return i
+                if attempt == 0:
+                    # plugged in after the voice started: refresh the device list
+                    self.sd._terminate()
+                    self.sd._initialize()
+            except Exception:
+                break
         return None
 
     def play(self, audio, rate, still_wanted, device=None):
