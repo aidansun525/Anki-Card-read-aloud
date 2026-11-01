@@ -127,6 +127,17 @@ class SettingsDialog(QDialog):
         self.natural_volume.setValue(int(float(cfg.get("natural_volume", 0.9)) * 100))
         form.addRow("Natural volume:", self.natural_volume)
 
+        self.device = QComboBox()
+        self.device.addItem("Computer's default output", "")
+        current = cfg.get("output_device") or ""
+        for name in natural.output_devices():
+            self.device.addItem(name, name)
+        if current and self.device.findData(current) < 0:
+            self.device.addItem(f"{current} (not connected)", current)
+        self.device.setCurrentIndex(max(0, self.device.findData(current)))
+        self.device.setToolTip("Where the natural voice plays. The built-in voice uses the computer's default output.")
+        form.addRow("Play on:", self.device)
+
         self.install_status = QLabel()
         self.install_status.setWordWrap(True)
         self.install_button = QPushButton()
@@ -203,7 +214,7 @@ class SettingsDialog(QDialog):
 
     def update_engine(self):
         on = self.engine.currentData() == "natural"
-        for w in (self.natural_voice, self.natural_speed, self.natural_volume):
+        for w in (self.natural_voice, self.natural_speed, self.natural_volume, self.device):
             w.setEnabled(on)
         for w in (self.voice, self.speed):
             w.setEnabled(not on)
@@ -247,6 +258,7 @@ class SettingsDialog(QDialog):
             natural_voice=self.natural_voice.currentData(),
             natural_speed=round(self.natural_speed.value(), 2),
             natural_volume=round(self.natural_volume.value() / 100, 2),
+            output_device=self.device.currentData() or "",
             auto_read_front=self.front.isChecked(),
             auto_read_back=self.back.isChecked(),
             cloze_back=self.cloze.currentData(),

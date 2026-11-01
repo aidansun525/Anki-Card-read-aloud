@@ -1,7 +1,8 @@
 """Runs in its own Python (set up by natural.py), never inside Anki.
 
 Loads the Kokoro neural voice once, then reads JSON commands on stdin:
-  {"cmd": "speak", "id": 3, "text": "...", "voice": "af_heart", "speed": 1.0, "volume": 0.9}
+  {"cmd": "speak", "id": 3, "text": "...", "voice": "af_heart", "speed": 1.0, "volume": 0.9,
+   "device": "MacBook Air Speakers"}
   {"cmd": "stop"}
 and answers with JSON events on stdout: ready, started, done, error.
 
@@ -341,11 +342,11 @@ class Speaker:
                         phonemes, voice=style, speed=speed, lang=lang, is_phonemes=True
                     )
                     audio = np.asarray(audio, dtype=np.float32) * volume
-                    self._put(gen, ("audio", job_id, audio, rate, first))
+                    self._put(gen, ("audio", job_id, audio, rate, first, job.get("device")))
                     first = False
             except Exception as e:
                 emit(event="error", id=job_id, message=f"{type(e).__name__}: {e}")
-            self._put(gen, ("end", job_id, None, 0, False))
+            self._put(gen, ("end", job_id, None, 0, False, None))
 
     def _put(self, gen, item):
         while self._current(gen):
@@ -357,7 +358,7 @@ class Speaker:
 
     def _play_loop(self):
         while True:
-            gen, (kind, job_id, audio, rate, first) = self.chunks.get()
+            gen, (kind, job_id, audio, rate, first, device) = self.chunks.get()
             if not self._current(gen):
                 continue
             if kind == "end":
@@ -367,7 +368,7 @@ class Speaker:
                 emit(event="started", id=job_id)
             # short silence so sentences don't run together
             gap = np.zeros(int(rate * 0.12), dtype=np.float32)
-            self.player.play(np.concatenate([audio, gap]), rate, lambda: self._current(gen))
+            self.player.play(np.concatenate([audio, gap]), rate, lambda: self._current(gen), device)
 
 
 class SoundDevicePlayer:
@@ -376,8 +377,25 @@ class SoundDevicePlayer:
 
         self.sd = sd
 
-    def play(self, audio, rate, still_wanted):
-        self.sd.play(audio, rate)
+    def _device(self, name):
+        """The output device with this name, or None for the system default
+        (also when it has been unplugged)."""
+        if not name:
+            return None
+        try:
+            for i, dev in enumerate(self.sd.query_devices()):
+                if dev["name"] == name and dev["max_output_channels"] > 0:
+                    return i
+        except Exception:
+            pass
+        return None
+
+    def play(self, audio, rate, still_wanted, device=None):
+        try:
+            self.sd.play(audio, rate, device=self._device(device))
+        except Exception:
+            # the chosen device can't play this; fall back to the default
+            self.sd.play(audio, rate)
         if still_wanted():
             self.sd.wait()
         else:
@@ -394,7 +412,7 @@ class WavFilePlayer:
         self.folder = folder
         self.n = 0
 
-    def play(self, audio, rate, still_wanted):
+    def play(self, audio, rate, still_wanted, device=None):
         import wave
 
         self.n += 1

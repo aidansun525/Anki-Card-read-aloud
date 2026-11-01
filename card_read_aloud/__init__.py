@@ -34,6 +34,7 @@ DEFAULTS = {
     "natural_voice": "af_heart",
     "natural_speed": 0.95,
     "natural_volume": 0.9,
+    "output_device": "",
     "voice": "",
     "voice_lang": "en_US",
     "speed": 1.0,
@@ -181,6 +182,7 @@ def _speak_natural(text, cfg, interrupt):
             cfg.get("natural_voice") or "af_heart",
             _num(cfg.get("natural_speed"), 0.95, 0.5, 2.0),
             _num(cfg.get("natural_volume"), 0.9, 0.05, 1.0),
+            cfg.get("output_device") or "",
         )
 
     go()

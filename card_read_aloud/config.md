@@ -16,3 +16,4 @@ Use **Tools > Card Read Aloud > Settings** for a friendlier window. Raw options:
 - `max_chars`: stop after this many characters.
 - `shortcut`: key that reads the current side again, or stops reading.
 - `replacements`: abbreviations to say as words.
+- `output_device`: the speaker or headphones the natural voice plays on, by name. Empty means the computer's default output. (The built-in voice always uses the default output.)

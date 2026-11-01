@@ -382,10 +382,10 @@ class Helper:
             self.speaking = msg["id"]
         return True
 
-    def speak(self, text, voice, speed, volume):
+    def speak(self, text, voice, speed, volume, device=""):
         self.next_id += 1
         msg = {"cmd": "speak", "id": self.next_id, "text": text, "voice": voice,
-               "speed": speed, "volume": volume}
+               "speed": speed, "volume": volume, "device": device or ""}
         self.start()
         if self.ready:
             self._send(msg)
@@ -416,6 +416,32 @@ class Helper:
 
 
 helper = Helper()
+
+
+def output_devices():
+    """Names of the speakers and headphones the natural voice can play on."""
+    if not is_installed():
+        return []
+    script = (
+        "import json, sounddevice as sd\n"
+        "names = []\n"
+        "for d in sd.query_devices():\n"
+        "    if d['max_output_channels'] > 0 and d['name'] not in names:\n"
+        "        names.append(d['name'])\n"
+        "print(json.dumps(names))\n"
+    )
+    kwargs = {}
+    if sys.platform == "win32":
+        kwargs["creationflags"] = 0x08000000
+    try:
+        out = subprocess.run(
+            [env_python(), "-I", "-c", script], capture_output=True, text=True,
+            encoding="utf-8", timeout=15, env=_clean_env(), **kwargs,
+        )
+        return json.loads(out.stdout.strip().splitlines()[-1])
+    except Exception as e:
+        log(f"listing output devices failed: {e}")
+        return []
 
 
 def stop_helper():

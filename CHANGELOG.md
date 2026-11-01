@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9 (2026-11-01)
+
+- **Choose where the natural voice plays.** Settings has a new "Play on" list with your speakers and headphones (for example AirPods). If the chosen device is unplugged, the voice uses the computer's default output instead. The built-in voice always uses the default output.
+
 ## 1.8 (2026-10-30)
 
 - **Fixes cards being read two or three times.** This happened when the add-on was installed twice, for example once from AnkiWeb and once from a file: each copy read every card, often one with the built-in voice and one with the natural voice. Now only one copy reads, and it offers to turn the extra copy off (your settings come along).

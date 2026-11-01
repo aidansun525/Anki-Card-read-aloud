@@ -8,6 +8,7 @@
     "natural_voice": "af_heart",
     "natural_speed": 0.95,
     "natural_volume": 0.9,
+    "output_device": "",
     "voice": "",
     "voice_lang": "en_US",
     "speed": 1.0,

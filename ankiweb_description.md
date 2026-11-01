@@ -10,7 +10,7 @@ The natural voice is **[Kokoro](https://huggingface.co/hexgrad/Kokoro-82M)**, a 
 
 - 🗣️ Gentle voices to choose from: **Heart** (warm), **Nicole** (soft, almost a whisper), a **Heart + Nicole** blend, Bella, Emma, Michael and more
 - ⚡ **Speaks live, with no pre-rendering.** There's no waiting to generate audio and no sound files added to your collection, so syncing stays fast
-- 🎚️ Adjustable speed and volume
+- 🎚️ Adjustable speed and volume, and a choice of speakers or headphones
 
 > ⚠️ **Heads-up: one-time ~500 MB download is REQUIRED FOR NATURAL VOICE.** The natural voice isn't bundled. When you turn it on (**Tools → Card Read Aloud → Settings → Download**), the add-on downloads the voice model and a small private Python engine, about 500 MB. This happens once. It lives inside the add-on's own folder, never touches Anki's Python, and the **Remove** button deletes all of it.
 >
@@ -61,6 +61,8 @@ Open **Tools → Card Read Aloud → Settings**, or the **Config** button in the
 ---
 
 ## 📝 What's new
+
+**1.9:** choose which speakers or headphones the natural voice plays on.
 
 **1.8:** fixes cards being read twice when the add-on was installed both from AnkiWeb and from a file.
 
